@@ -1,5 +1,6 @@
 package com.example.boardservice.service;
 
+import com.example.boardservice.client.PointClient;
 import com.example.boardservice.client.UserClient;
 import com.example.boardservice.domain.Board;
 import com.example.boardservice.dto.BoardResponseDto;
@@ -19,20 +20,26 @@ import java.util.Optional;
 public class BoardService {
     private final BoardRepository boardRepository;
     private final UserClient userClient;
+    private final PointClient pointClient;
 
-    public BoardService(BoardRepository boardRepository, UserClient userClient) {
+    public BoardService(BoardRepository boardRepository, UserClient userClient, PointClient pointClient) {
         this.boardRepository = boardRepository;
         this.userClient = userClient;
+        this.pointClient = pointClient;
     }
 
     @Transactional
     public void create(CreateRequestDto createRequestDto) {
+        pointClient.deductPoint(createRequestDto.getUserId(), 100);
+
         Board board = new Board(
                 createRequestDto.getTitle(),
                 createRequestDto.getContent(),
                 createRequestDto.getUserId()
         );
         this.boardRepository.save(board);
+
+        userClient.addActivityScore(createRequestDto.getUserId(), 10);
     }
 
     public BoardResponseDto getBoard(Long id) {
