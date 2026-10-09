@@ -1,5 +1,6 @@
 package com.example.boardservice.client;
 
+import com.example.boardservice.dto.AddPointRequestDto;
 import com.example.boardservice.dto.DeductPointRequestDto;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,6 +32,20 @@ public class PointClient {
         } catch (RestClientException e) {
             log.error("포인트 차감 실패", e);
         }
+    }
 
+    public void addPoint(Long userId, int amount) {
+        AddPointRequestDto addPointRequestDto = new AddPointRequestDto(userId, amount);
+
+        try {
+            restClient.post()
+                    .uri("/points/add")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(addPointRequestDto)
+                    .retrieve()
+                    .toBodilessEntity();
+        } catch (RestClientException e) {
+            log.error("포인트 적립 실패", e);
+        }
     }
 }

@@ -8,7 +8,6 @@ import com.example.boardservice.dto.CreateRequestDto;
 import com.example.boardservice.domain.BoardRepository;
 import com.example.boardservice.dto.UserDto;
 import com.example.boardservice.dto.UserResponseDto;
-import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
 
 import java.util.HashMap;
@@ -28,18 +27,36 @@ public class BoardService {
         this.pointClient = pointClient;
     }
 
-    @Transactional
     public void create(CreateRequestDto createRequestDto) {
-        pointClient.deductPoint(createRequestDto.getUserId(), 100);
+        boolean isPointDeducted = false;
+        Long savedBoardId = null;
+        boolean isBoardCreated = false;
 
-        Board board = new Board(
-                createRequestDto.getTitle(),
-                createRequestDto.getContent(),
-                createRequestDto.getUserId()
-        );
-        this.boardRepository.save(board);
+        try {
+            pointClient.deductPoint(createRequestDto.getUserId(), 100);
+            isPointDeducted = true;
 
-        userClient.addActivityScore(createRequestDto.getUserId(), 10);
+            Board board = new Board(
+                    createRequestDto.getTitle(),
+                    createRequestDto.getContent(),
+                    createRequestDto.getUserId()
+            );
+            Board savedBoard = this.boardRepository.save(board);
+            savedBoardId = savedBoard.getId();
+            isBoardCreated = true;
+
+            userClient.addActivityScore(createRequestDto.getUserId(), 10);
+        } catch (Exception e) {
+            if (isBoardCreated) {
+                boardRepository.deleteById(savedBoardId);
+            }
+
+            if (isPointDeducted) {
+                pointClient.addPoint(createRequestDto.getUserId(), 100);
+            }
+
+            throw e;
+        }
     }
 
     public BoardResponseDto getBoard(Long id) {
