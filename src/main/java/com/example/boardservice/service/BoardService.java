@@ -8,7 +8,11 @@ import com.example.boardservice.dto.CreateRequestDto;
 import com.example.boardservice.domain.BoardRepository;
 import com.example.boardservice.dto.UserDto;
 import com.example.boardservice.dto.UserResponseDto;
+import com.example.boardservice.event.BoardCreatedEvent;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 
 import java.util.HashMap;
 import java.util.List;
@@ -20,11 +24,13 @@ public class BoardService {
     private final BoardRepository boardRepository;
     private final UserClient userClient;
     private final PointClient pointClient;
+    private final KafkaTemplate<String, String> kafkaTemplate;
 
-    public BoardService(BoardRepository boardRepository, UserClient userClient, PointClient pointClient) {
+    public BoardService(BoardRepository boardRepository, UserClient userClient, PointClient pointClient, KafkaTemplate<String, String> kafkaTemplate) {
         this.boardRepository = boardRepository;
         this.userClient = userClient;
         this.pointClient = pointClient;
+        this.kafkaTemplate = kafkaTemplate;
     }
 
     public void create(CreateRequestDto createRequestDto) {
@@ -41,11 +47,12 @@ public class BoardService {
                     createRequestDto.getContent(),
                     createRequestDto.getUserId()
             );
-            Board savedBoard = this.boardRepository.save(board);
+            Board savedBoard = boardRepository.save(board);
             savedBoardId = savedBoard.getId();
             isBoardCreated = true;
 
-            userClient.addActivityScore(createRequestDto.getUserId(), 10);
+            BoardCreatedEvent boardCreatedEvent = new BoardCreatedEvent(createRequestDto.getUserId());
+            kafkaTemplate.send("board.created", toJsonString(boardCreatedEvent));
         } catch (Exception e) {
             if (isBoardCreated) {
                 boardRepository.deleteById(savedBoardId);
@@ -56,6 +63,16 @@ public class BoardService {
             }
 
             throw e;
+        }
+    }
+
+    private String toJsonString(Object object) {
+        ObjectMapper objectMapper = new ObjectMapper();
+
+        try {
+            return objectMapper.writeValueAsString(object);
+        } catch (JacksonException e) {
+            throw new RuntimeException("Json 직렬화 실패");
         }
     }
 
