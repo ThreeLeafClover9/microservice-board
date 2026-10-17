@@ -24,7 +24,7 @@ public class PointClient {
 
         try {
             restClient.post()
-                    .uri("/points/duduct")
+                    .uri("/internal/points/duduct")
                     .contentType(MediaType.APPLICATION_JSON)
                     .body(deductPointRequestDto)
                     .retrieve()
@@ -39,7 +39,7 @@ public class PointClient {
 
         try {
             restClient.post()
-                    .uri("/points/add")
+                    .uri("/internal/points/add")
                     .contentType(MediaType.APPLICATION_JSON)
                     .body(addPointRequestDto)
                     .retrieve()

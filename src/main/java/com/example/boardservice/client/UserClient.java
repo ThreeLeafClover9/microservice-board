@@ -27,7 +27,7 @@ public class UserClient {
     public Optional<UserResponseDto> fetchUser(Long id) {
         try {
             UserResponseDto userResponseDto = restClient.get()
-                    .uri("/users/{id}", id)
+                    .uri("/internal/users/{id}", id)
                     .retrieve()
                     .body(UserResponseDto.class);
 
@@ -43,7 +43,7 @@ public class UserClient {
         try {
             return restClient.get()
                     .uri(uriBuilder -> uriBuilder
-                            .path("/users")
+                            .path("/internal/users")
                             .queryParam("ids", ids)
                             .build()
                     )
@@ -62,7 +62,7 @@ public class UserClient {
 
         try {
             restClient.post()
-                    .uri("/users/activity-score/add")
+                    .uri("/internal/users/activity-score/add")
                     .contentType(MediaType.APPLICATION_JSON)
                     .body(addActivityScoreRequestDto)
                     .retrieve()
