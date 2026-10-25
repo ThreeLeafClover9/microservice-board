@@ -18,8 +18,8 @@ public class BoardController {
     }
 
     @PostMapping
-    public ResponseEntity<Void> create(@RequestBody CreateRequestDto createRequestDto) {
-        boardService.create(createRequestDto);
+    public ResponseEntity<Void> create(@RequestBody CreateRequestDto createRequestDto, @RequestHeader("X-User-Id") Long userId) {
+        boardService.create(createRequestDto, userId);
         return ResponseEntity.noContent().build();
     }
 

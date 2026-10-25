@@ -26,32 +26,32 @@ public class BoardService {
         this.kafkaTemplate = kafkaTemplate;
     }
 
-    public void create(CreateRequestDto createRequestDto) {
+    public void create(CreateRequestDto createRequestDto, Long userId) {
         boolean isPointDeducted = false;
         Long savedBoardId = null;
         boolean isBoardCreated = false;
 
         try {
-            pointClient.deductPoint(createRequestDto.getUserId(), 100);
+            pointClient.deductPoint(userId, 100);
             isPointDeducted = true;
 
             Board board = new Board(
                     createRequestDto.getTitle(),
                     createRequestDto.getContent(),
-                    createRequestDto.getUserId()
+                    userId
             );
             Board savedBoard = boardRepository.save(board);
             savedBoardId = savedBoard.getId();
             isBoardCreated = true;
 
-            BoardCreatedEvent boardCreatedEvent = new BoardCreatedEvent(createRequestDto.getUserId());
+            BoardCreatedEvent boardCreatedEvent = new BoardCreatedEvent(userId);
             kafkaTemplate.send("board.created", toJsonString(boardCreatedEvent));
         } catch (Exception e) {
             if (isBoardCreated) {
                 boardRepository.deleteById(savedBoardId);
             }
             if (isPointDeducted) {
-                pointClient.addPoint(createRequestDto.getUserId(), 100);
+                pointClient.addPoint(userId, 100);
             }
             throw e;
         }
